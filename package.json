@@ -1,17 +1,23 @@
 {
-  "name": "instagram-image-crawler",
+  "name": "instagram-crawler",
   "version": "1.0.0",
+  "description": "Instagram image crawler",
   "main": "index.js",
+  "engines": {
+    "node": ">=10.0.0 <11.0.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "axios": "^1.7.9",
-    "cheerio": "^1.0.0",
-    "dotenv": "^16.4.7"
-  }
+    "axios": "^0.21.1",
+    "dotenv": "^8.2.0"
+  },
+  "keywords": [
+    "instagram",
+    "crawler",
+    "images"
+  ],
+  "author": "",
+  "license": "MIT"
 }

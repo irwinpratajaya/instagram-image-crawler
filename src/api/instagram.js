@@ -35,7 +35,8 @@ async function getUserId(username, headers) {
   const userInfoUrl = `${ENDPOINTS.USER_INFO}?username=${username}`;
   logger.info('Fetching user info from:', userInfoUrl);
 
-  const { data: userInfo } = await axios.get(userInfoUrl, { headers });
+  const response = await axios.get(userInfoUrl, { headers });
+  const userInfo = response.data;
 
   if (!userInfo.data || !userInfo.data.user) {
     throw new Error('Failed to fetch user information');
@@ -56,22 +57,24 @@ async function getUserInfo(username, headers) {
   const userInfoUrl = `${ENDPOINTS.USER_INFO}?username=${username}`;
   logger.info('Fetching user info from:', userInfoUrl);
 
-  const { data: userInfo } = await axios.get(userInfoUrl, { headers });
+  const response = await axios.get(userInfoUrl, { headers });
+  const userInfo = response.data;
 
   if (!userInfo.data || !userInfo.data.user) {
     throw new Error('Failed to fetch user information');
   }
 
+  const user = userInfo.data.user;
   return {
-    id: userInfo.data.user.id,
-    username: userInfo.data.user.username,
-    fullName: userInfo.data.user.full_name,
-    biography: userInfo.data.user.biography,
-    followersCount: userInfo.data.user.edge_followed_by.count,
-    followingCount: userInfo.data.user.edge_follow.count,
-    isPrivate: userInfo.data.user.is_private,
-    isVerified: userInfo.data.user.is_verified,
-    profilePicUrl: userInfo.data.user.profile_pic_url_hd
+    id: user.id,
+    username: user.username,
+    fullName: user.full_name,
+    biography: user.biography,
+    followersCount: user.edge_followed_by.count,
+    followingCount: user.edge_follow.count,
+    isPrivate: user.is_private,
+    isVerified: user.is_verified,
+    profilePicUrl: user.profile_pic_url_hd
   };
 }
 
@@ -82,11 +85,16 @@ async function getUserInfo(username, headers) {
  * @param {number} count - Number of posts to fetch (default: 12)
  * @returns {Promise<string[]>} Array of image URLs
  */
-async function fetchUserPosts(userId, headers, count = DEFAULTS.POST_COUNT) {
+async function fetchUserPosts(userId, headers, count) {
+  if (typeof count === 'undefined') {
+    count = DEFAULTS.POST_COUNT;
+  }
+
   const feedUrl = `${ENDPOINTS.USER_FEED}${userId}/`;
   logger.info('Fetching user feed from:', feedUrl);
 
-  const { data: feed } = await axios.get(feedUrl, { headers });
+  const response = await axios.get(feedUrl, { headers });
+  const feed = response.data;
 
   if (!feed.items) {
     throw new Error('Failed to fetch user feed');
@@ -97,7 +105,7 @@ async function fetchUserPosts(userId, headers, count = DEFAULTS.POST_COUNT) {
 
   for (const post of posts) {
     const urls = extractImageUrl(post);
-    imageUrls.push(...urls);
+    imageUrls.push.apply(imageUrls, urls);
   }
 
   return imageUrls;
@@ -114,13 +122,13 @@ function extractImageUrl(post) {
   // Handle carousel posts
   if (post.carousel_media) {
     for (const media of post.carousel_media) {
-      if (media.image_versions2 && media.image_versions2.candidates) {
+      if (media.image_versions2 && media.image_versions2.candidates && media.image_versions2.candidates.length > 0) {
         urls.push(media.image_versions2.candidates[0].url);
       }
     }
   }
   // Handle single image posts
-  else if (post.image_versions2 && post.image_versions2.candidates) {
+  else if (post.image_versions2 && post.image_versions2.candidates && post.image_versions2.candidates.length > 0) {
     urls.push(post.image_versions2.candidates[0].url);
   }
 
