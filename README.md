@@ -1,10 +1,11 @@
 # Instagram Image Crawler
 
-A Node.js script to fetch images from public Instagram profiles using Instagram's internal API. This tool allows you to retrieve image URLs from a user's recent posts, including both single images and carousel posts.
+A Node.js script to fetch profile information and images from public Instagram profiles using Instagram's internal API. This tool allows you to retrieve profile details (including follower count, following count, and total posts) along with image URLs from a user's recent posts, including both single images and carousel posts.
 
 ## Features
 
-- Fetch recent posts from any public Instagram profile
+- Fetch comprehensive profile information (followers, following, posts count, etc.)
+- Retrieve recent posts from any public Instagram profile
 - Support for both single image posts and carousel posts
 - Comprehensive error handling with detailed error messages
 - Environment variable configuration for secure credential management
@@ -34,13 +35,14 @@ A Node.js script to fetch images from public Instagram profiles using Instagram'
 ## Usage
 
 ```javascript
-const { getInstagramImages } = require('./index');
+const { getInstagramData } = require('./index');
 
 // Example usage
 async function main() {
-  const images = await getInstagramImages('username');
-  console.log('Found Images:', images.length);
-  console.log('Image URLs:', images);
+  const data = await getInstagramData('username');
+  console.log('Profile Info:', data.profile);
+  console.log('Found Images:', data.images.length);
+  console.log('Image URLs:', data.images);
 }
 
 main().catch(console.error);

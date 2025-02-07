@@ -47,44 +47,90 @@ async function getUserId(username, headers) {
 }
 
 /**
- * Fetches user posts from Instagram API
- * @param {string} userId - Instagram user ID
+ * Fetches user profile information from Instagram API
+ * @param {string} username - Instagram username
  * @param {Object} headers - Request headers
- * @returns {Promise<string[]>} Array of image URLs
+ * @returns {Promise<Object>} User profile information
  */
-async function fetchUserPosts(userId, headers) {
-  const postsUrl = `${ENDPOINTS.USER_FEED}${userId}/?count=${DEFAULTS.POST_COUNT}`;
-  logger.info('Fetching posts from:', postsUrl);
+async function getUserInfo(username, headers) {
+  const userInfoUrl = `${ENDPOINTS.USER_INFO}?username=${username}`;
+  logger.info('Fetching user info from:', userInfoUrl);
 
-  const { data: postsData } = await axios.get(postsUrl, { headers });
+  const { data: userInfo } = await axios.get(userInfoUrl, { headers });
 
-  if (!postsData.items?.length) {
-    throw new Error('Failed to fetch user posts');
+  if (!userInfo.data?.user) {
+    throw new Error('Failed to fetch user information');
   }
 
-  return postsData.items
-    .map(item => extractImageUrl(item))
-    .filter(url => url !== null);
+  return {
+    id: userInfo.data.user.id,
+    username: userInfo.data.user.username,
+    fullName: userInfo.data.user.full_name,
+    biography: userInfo.data.user.biography,
+    followersCount: userInfo.data.user.edge_followed_by.count,
+    followingCount: userInfo.data.user.edge_follow.count,
+    isPrivate: userInfo.data.user.is_private,
+    isVerified: userInfo.data.user.is_verified,
+    profilePicUrl: userInfo.data.user.profile_pic_url_hd
+  };
 }
 
 /**
- * Extracts image URL from a post item
- * @param {Object} item - Post item from Instagram API
- * @returns {string|null} Image URL or null if no image found
+ * Fetches user posts from Instagram API
+ * @param {string} userId - Instagram user ID
+ * @param {Object} headers - Request headers
+ * @param {number} count - Number of posts to fetch (default: 12)
+ * @returns {Promise<string[]>} Array of image URLs
  */
-function extractImageUrl(item) {
-  if (item.carousel_media?.[0]?.image_versions2?.candidates?.[0]?.url) {
-    return item.carousel_media[0].image_versions2.candidates[0].url;
+async function fetchUserPosts(userId, headers, count = DEFAULTS.POST_COUNT) {
+  const feedUrl = `${ENDPOINTS.USER_FEED}${userId}/`;
+  logger.info('Fetching user feed from:', feedUrl);
+
+  const { data: feed } = await axios.get(feedUrl, { headers });
+
+  if (!feed.items) {
+    throw new Error('Failed to fetch user feed');
   }
-  if (item.image_versions2?.candidates?.[0]?.url) {
-    return item.image_versions2.candidates[0].url;
+
+  const posts = feed.items.slice(0, count);
+  const imageUrls = [];
+
+  for (const post of posts) {
+    const urls = extractImageUrl(post);
+    imageUrls.push(...urls);
   }
-  return null;
+
+  return imageUrls;
+}
+
+/**
+ * Extracts image URLs from a post object
+ * @param {Object} post - Instagram post object
+ * @returns {string[]} Array of image URLs
+ */
+function extractImageUrl(post) {
+  const urls = [];
+
+  // Handle carousel posts
+  if (post.carousel_media) {
+    for (const media of post.carousel_media) {
+      if (media.image_versions2?.candidates) {
+        urls.push(media.image_versions2.candidates[0].url);
+      }
+    }
+  }
+  // Handle single image posts
+  else if (post.image_versions2?.candidates) {
+    urls.push(post.image_versions2.candidates[0].url);
+  }
+
+  return urls;
 }
 
 module.exports = {
   createHeaders,
   getUserId,
+  getUserInfo,
   fetchUserPosts,
   extractImageUrl
 };
