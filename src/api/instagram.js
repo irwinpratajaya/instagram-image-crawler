@@ -114,13 +114,13 @@ function extractImageUrl(post) {
   // Handle carousel posts
   if (post.carousel_media) {
     for (const media of post.carousel_media) {
-      if (media.image_versions2?.candidates) {
+      if (media?.image_versions2?.candidates?.[0]?.url) {
         urls.push(media.image_versions2.candidates[0].url);
       }
     }
   }
   // Handle single image posts
-  else if (post.image_versions2?.candidates) {
+  else if (post?.image_versions2?.candidates?.[0]?.url) {
     urls.push(post.image_versions2.candidates[0].url);
   }
 
